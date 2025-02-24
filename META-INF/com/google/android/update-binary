@@ -1,0 +1,39 @@
+#!/bin/sh
+# Magisk module update-binary script
+
+# Arguments for the Magisk installer
+. /tmp/backuptool.functions
+
+# The path to the modules.img file
+# Check if /data/adb/ksu/modules.img exists
+if [ -f "/data/adb/ksu/modules.img" ]; then
+  # If it exists, use this path
+  MODULE_IMG_PATH="/data/adb/ksu/modules.img"
+else
+  # If not, use the fallback path
+  MODULE_IMG_PATH="/data/adb/apd/modules.img"
+fi
+
+MODULES_DIR="/data/adb/modules"
+
+# Function to calculate the actual sparse size of the module directory
+get_sparse_size() {
+  du -s $MODULES_DIR | awk '{print $1}'
+}
+
+# Function to resize the modules.img file to the actual size
+resize_modules_img() {
+  ACTUAL_SIZE=$(get_sparse_size)
+  echo "Resizing modules.img to $ACTUAL_SIZE KB"
+  
+  # Resize the sparse file (this might require proper file system tools)
+  resize2fs -M $MODULE_IMG_PATH
+}
+
+# Main script
+case "$1" in
+  post-fs-data)
+    resize_modules_img
+    ;;
+esac
+exit 0

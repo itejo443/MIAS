@@ -1,0 +1,7 @@
+id=MIAS
+name=MIAS
+version=1.0
+versionCode=1
+author=itejo443
+description=Resize the ksu/apatch modules.img file to its actual sparse size
+

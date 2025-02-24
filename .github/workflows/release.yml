@@ -1,0 +1,57 @@
+name: Release MIAS Module
+
+on:
+  push:
+    # Trigger on tag push (v*.*.*)
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch: # Allows manual triggering via GitHub UI
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Step 1: Checkout the code
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    # Step 2: Set up version code and version name
+    - name: Set up version code and version name
+      run: |
+        # Increment version code based on the number of commits in the main branch
+        VERSION_CODE=$(git rev-list --count HEAD)
+        echo "VERSION_CODE=$VERSION_CODE" >> $GITHUB_ENV
+        
+        # Get the version from the latest git tag
+        VERSION_NAME=$(git describe --tags --abbrev=0)
+        echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
+
+        echo "Version Code: $VERSION_CODE"
+        echo "Version Name: $VERSION_NAME"
+      
+    # Step 3: Modify module.prop with new version info
+    - name: Update module.prop
+      run: |
+        # Modify module.prop with the new version code and version name
+        sed -i "s/^versionCode=.*/versionCode=$VERSION_CODE/" module.prop
+        sed -i "s/^version=.*/version=$VERSION_NAME/" module.prop
+        
+        cat module.prop  # Show updated version info for debugging
+
+    # Step 4: Zip the MIAS module folder
+    - name: Zip the MIAS module
+      run: |
+        zip -r mias-module-$VERSION_NAME.zip . -x "*.git*" "*.github*" "*LICENSE*" "*README*" # Exclude git and github directories
+        
+    # Step 5: Create GitHub Release
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ github.ref_name }}
+        files: mias-module-${{ env.VERSION_NAME }}.zip
+        name: Release ${{ env.VERSION_NAME }}  # The name of the release
+        draft: false  # Optionally, set to 'true' to create a draft release
+        prerelease: false  # Optionally, set to 'true' for prereleases
+
+
